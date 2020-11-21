@@ -9,6 +9,9 @@ from config import APP_NAME, HOST, DEBUG, MAX_CONTENT_LENGTH, STORAGE_DIR, API, 
 
 
 class Route:
+    """
+    Pourly implemented router class
+    """
 
     upload = f'{API}/upload'
     download = f'{API}/download'
@@ -16,6 +19,10 @@ class Route:
 
 
 def create_app() -> fl.app.Flask:
+    """
+    Entry point for the API
+    Creates a flask.app.Flask instance
+    """
 
     # for directory in [STORAGE_DIR, TEMP_DIR, SRC_DIR]:
     #     if not os.path.exists(directory):
@@ -50,7 +57,6 @@ def create_app() -> fl.app.Flask:
     app.register_error_handler(Exception, default_error_handler)
 
     return app
-
 
 
 if __name__ == '__main__':

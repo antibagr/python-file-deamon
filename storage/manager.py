@@ -6,13 +6,14 @@ from werkzeug.utils import secure_filename
 
 from config import STORAGE_DIR, TEMP_DIR, HASHING_METHOD, READING_FILE_BUF_SIZE
 
-import time
-
 from typing import Tuple
 
 
 class EmptyFileException(Exception):
-    pass
+
+    def __init__(self):
+        self.message = "Storing empty files is not allowed"
+        super().__init__()
 
 
 class StorageMaster:
@@ -89,7 +90,7 @@ class StorageMaster:
 
     @classmethod
     def get(cls, hash_string: str) -> Tuple[str, str]:
-        """Get subdirectory and full filename if one is found
+        """Get subdirectory and full filename if can find one
 
         Args:
             cls (type): .

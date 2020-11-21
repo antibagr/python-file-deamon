@@ -2,13 +2,15 @@ from flask_restful import Resource, reqparse
 
 from typing import Tuple, Dict, Optional, Any
 
-from config import APP_NAME
+from config import APP_NAME, MAX_CONTENT_LENGTH_VERBOSE
 
 
 StandartResponse = Tuple[Dict, int]
 
 
 class Responses:
+    """Storage to typed responses of the API
+    """
 
     NotAllowed = "This method is not allowed. Please use {method} instead"
 
@@ -16,20 +18,27 @@ class Responses:
 
     Response403 = {"message": "Invalid hash", "status_code": 403}, 403
     Response404 = {"message": "Not found", "status_code": 404}, 404
-    Response405 = {"message": "Only POST method is allowed", "status_code": 405}, 405
-    Response406 = {"message": "Hash is too long", "status_code": 406}, 406
-    Response413 = {"message": "Max file size is 2GB", "status_code": 413}, 413
+    Response413 = {"message": f"Max file size is {MAX_CONTENT_LENGTH_VERBOSE}", "status_code": 413}, 413
     Response418 = {"message": "Good try. But I'm a teapot", "status_code": 418}, 418
     Response500 = {"message": "Sorry, there had been internal error", "status_code": 500}, 500
 
     @staticmethod
     def Build(status_code: int = 200, **kw) -> StandartResponse:
+        """Constructor for flask responses
+
+        Args:
+            status_code (int): . Defaults to 200
+            **kw (type): Any parameters that could be jsonified
+
+        Returns:
+            StandartResponse: Tuple[Dict, int]
+        """
         return {**kw, "status_code": status_code}, status_code
 
 
 class BaseRequest(Resource):
     """Base Resource class
-        Returns 'method not allowed' at every method
+        Responses with 405 'method not allowed' at every request
     """
 
     AllowedMethod = ""
@@ -43,14 +52,10 @@ class BaseRequest(Resource):
                 We prefer to set parameters as non-required
                 to be able to overwrite default missing json-body parameter
                 Flask response which missed the status_code filed
-            **kw (Any): Any settings to reqparse.RequestParser().add_argument()
+            **kw (Any): Any settings to be passed in reqparse.RequestParser().add_argument()
 
         Returns:
             type: parameter from json body of the request
-
-        Raises:
-            ExceptionName: Why the exception is raised.
-
         """
         parser = reqparse.RequestParser()
         parser.add_argument(parameter_name, **kw, required=required)
@@ -73,7 +78,4 @@ class BaseRequest(Resource):
         return self.NotAllowed()
 
     def delete(self, **kw) -> StandartResponse:
-        return self.NotAllowed()
-
-    def copy(self, **kw) -> StandartResponse:
         return self.NotAllowed()

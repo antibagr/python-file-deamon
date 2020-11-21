@@ -7,14 +7,14 @@ from .model import Responses
 
 def not_found(error):
 
-    code = 404
+    # code = 404
 
     return Responses.Response404
 
 
 def request_entity_too_large(error):
 
-    code = 413
+    # code = 413
 
     # This one doesn't work for some reason
     return Responses.Response413
@@ -22,7 +22,7 @@ def request_entity_too_large(error):
 
 def default_error_handler(error):
 
-    code = 500
+    # code = 500
 
     print(traceback.format_exc())
 
