@@ -8,6 +8,8 @@ from config import STORAGE_DIR, TEMP_DIR, HASHING_METHOD, READING_FILE_BUF_SIZE
 
 import time
 
+from typing import Tuple
+
 
 class EmptyFileException(Exception):
     pass
@@ -74,25 +76,41 @@ class StorageMaster:
         hashed_path = os.path.join(directory, hash_string + file_extension)
 
         if not os.path.exists(hashed_path):
-            shutil.move(temp_path, hashed_path)
+            try:
+                shutil.move(temp_path, hashed_path)
+            finally:
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+
         else:
             raise FileExistsError()
 
         return hash_string
 
     @classmethod
-    def get(cls, hash_string: str) -> str:
-        print(hash_string)
-        seek_directory = os.path.join(STORAGE_DIR, hash_string[:2])
+    def get(cls, hash_string: str) -> Tuple[str, str]:
+        """Get subdirectory and full filename if one is found
 
-        print(seek_directory)
+        Args:
+            cls (type): .
+            hash_string (str): .
+
+        Returns:
+            Tuple[str, str]: .
+
+        Raises:
+            ExceptionName: Why the exception is raised.
+
+        """
+
+        seek_directory = os.path.join(STORAGE_DIR, hash_string[:2])
 
         if os.path.exists(seek_directory):
             for suspect in os.listdir(seek_directory):
                 filename, extension = os.path.splitext(suspect)
                 if filename == hash_string:
-                    return suspect
-        return None
+                    return hash_string[:2], suspect
+        return None, None
 
     @classmethod
     def delete(cls, file_name: str) -> str:

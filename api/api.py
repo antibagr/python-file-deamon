@@ -1,7 +1,9 @@
+import os
 
 from flask import send_from_directory
 from flask_restful import reqparse
 from werkzeug.datastructures import FileStorage
+from werkzeug import exceptions
 
 from .model import BaseRequest, Responses, StandartResponse
 from storage import StorageMaster, EmptyFileException
@@ -50,9 +52,16 @@ class DownloadRequest(BaseRequest):
         if not verify_hash(hash_string):
             return Responses.Response403
 
-        foundfile = StorageMaster.get(hash_string)
-        if foundfile:
-            return send_from_directory(STORAGE_DIR, foundfile, as_attachment=True)
+        found_dir, found_file = StorageMaster.get(hash_string)
+        if found_file:
+
+            try:
+                return send_from_directory(os.path.join(STORAGE_DIR, found_dir), found_file, as_attachment=True)
+            except exceptions.NotFound:
+                # handle not found exception as internal
+                # because if everything works just fine
+                # this should not happen ever
+                return Responses.Response500
 
         return Responses.Build(message="Sorry, hash not found on the server", status_code=404)
 
@@ -78,10 +87,13 @@ class DeleteRequest(BaseRequest):
         if not verify_hash(hash_string):
             return Responses.Response403
 
-        file_path = StorageMaster.get(hash_string)
+        found_dir, found_file = StorageMaster.get(hash_string)
 
-        if file_path:
-            StorageMaster.delete(file_path)
+        if found_file:
+            try:
+                StorageMaster.delete(found_file)
+            except PermissionError:
+                return Responses.Build(message="Sorry, cannot delete the file now. Somebody is still connected to it", status_code=500)
             return Responses.Build(message="File was deleted", status_code=200)
 
         return Responses.Build(message="Sorry, hash not found on the server", status_code=404)

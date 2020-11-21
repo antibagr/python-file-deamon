@@ -1,10 +1,11 @@
 import flask as fl
 from flask_restful import Api
 
+
 from api.api import (UploadRequest, DownloadRequest,
                      DeleteRequest, TeaPotRequest, DefaultRequest)
 from api.errors import not_found, request_entity_too_large, default_error_handler
-from config import APP_NAME, HOST, DEBUG, MAX_CONTENT_LENGTH
+from config import APP_NAME, HOST, DEBUG, MAX_CONTENT_LENGTH, STORAGE_DIR
 
 
 def create_app() -> fl.app.Flask:
@@ -20,6 +21,7 @@ def create_app() -> fl.app.Flask:
     app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
     app.config['APP_NAME'] = APP_NAME
     app.config['TRAP_HTTP_EXCEPTIONS'] = True
+    app.config['UPLOAD_FOLDER'] = STORAGE_DIR
 
     app.app_context().push()
 
@@ -31,7 +33,7 @@ def create_app() -> fl.app.Flask:
 
     api.add_resource(DefaultRequest, '/')
     api.add_resource(UploadRequest, '/upload')
-    api.add_resource(DownloadRequest, '/download')
+    api.add_resource(DownloadRequest, '/download', '/download/')
     api.add_resource(DeleteRequest, '/delete', '/delete/<string:hash>')
     api.add_resource(TeaPotRequest, '/admin', '/admin/<string:anything>')
 
