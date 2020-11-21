@@ -6,6 +6,8 @@ from werkzeug.utils import secure_filename
 
 from config import STORAGE_DIR, TEMP_DIR, HASHING_METHOD, READING_FILE_BUF_SIZE
 
+import time
+
 
 class EmptyFileException(Exception):
     pass
@@ -13,9 +15,10 @@ class EmptyFileException(Exception):
 
 class StorageMaster:
 
-    def check_directory_exists():
-        if not os.path.exists(TEMP_DIR):
-            os.mkdir(TEMP_DIR)
+    def check_directory_exists() -> None:
+        for d in [STORAGE_DIR, TEMP_DIR]:
+            if not os.path.exists(d):
+                os.mkdir(d)
 
     def get_hash(file_path: str) -> str:
         sha2 = HASHING_METHOD()
@@ -30,19 +33,37 @@ class StorageMaster:
         return sha2.hexdigest()
 
     @classmethod
-    def save(cls, f: FileStorage) -> str:
+    def save(cls, f: FileStorage, fastway=True) -> str:
+
+        if f.stream.read(1) == b'':
+            raise EmptyFileException()
+
+        f.stream.seek(0)
 
         cls.check_directory_exists()
 
-        original_name = secure_filename(f.filename)
-        temp_path = os.path.join(TEMP_DIR, original_name)
-        f.save(temp_path)
+        f.filename = secure_filename(f.filename)
 
-        if not os.stat(temp_path).st_size:
-            os.remove(temp_path)
-            raise EmptyFileException()
+        sha2 = HASHING_METHOD()
+        sha2.update(f.filename.encode('utf-8'))
+        temp_path = os.path.join(TEMP_DIR, f.filename)
+        with open(temp_path, "wb", buffering=READING_FILE_BUF_SIZE, closefd=True) as out_file:
 
-        hash_string = cls.get_hash(temp_path)
+            while True:
+                data = f.stream.read(READING_FILE_BUF_SIZE)
+
+                if not data:
+                    break
+                sha2.update(data)
+                out_file.write(data)
+
+        hash_string = sha2.hexdigest()
+
+        # if not os.stat(temp_path).st_size:
+        #     os.remove(temp_path)
+        #     raise EmptyFileException()
+
+        # hash_string = cls.get_hash(temp_path)
 
         directory = os.path.join(STORAGE_DIR, hash_string[:2])
 

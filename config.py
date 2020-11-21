@@ -6,9 +6,9 @@ import hashlib
 READING_FILE_BUF_SIZE = 65536  # 64kb
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STORAGE_DIR = os.path.join(BASE_DIR, 'storage_')
+STORAGE_DIR = os.path.join(BASE_DIR, 'files')
 SRC_DIR = os.path.join(BASE_DIR, 'src')
-TEMP_DIR = os.path.join(BASE_DIR, 'temp')
+TEMP_DIR = os.path.join(STORAGE_DIR, 'temp')
 HASHING_METHOD = hashlib.sha256
 HASH_LENGTH = len(HASHING_METHOD('hashed string'.encode('utf-8')).hexdigest())
 
@@ -18,3 +18,4 @@ HASH_LENGTH = len(HASHING_METHOD('hashed string'.encode('utf-8')).hexdigest())
 APP_NAME = "Hash Guard"
 HOST = 'localhost'
 DEBUG = True
+MAX_CONTENT_LENGTH = 2 ** 64

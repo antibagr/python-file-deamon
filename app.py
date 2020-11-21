@@ -1,25 +1,23 @@
-from flask import Flask, request, app
-
+import flask as fl
 from flask_restful import Api
-
-from config import APP_NAME, HOST, DEBUG
 
 from api.api import (UploadRequest, DownloadRequest,
                      DeleteRequest, TeaPotRequest, DefaultRequest)
 from api.errors import not_found, request_entity_too_large, default_error_handler
+from config import APP_NAME, HOST, DEBUG, MAX_CONTENT_LENGTH
 
 
-def create_app() -> app.Flask:
+def create_app() -> fl.app.Flask:
 
     # for directory in [STORAGE_DIR, TEMP_DIR, SRC_DIR]:
     #     if not os.path.exists(directory):
     #         os.mkdir(directory)
 
-    app = Flask(__name__)
+    app = fl.Flask(__name__)
     api = Api(app)
 
     # max file size is 2 gigabytes
-    app.config['MAX_CONTENT_LENGTH'] = 22# ** 64
+    app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
     app.config['APP_NAME'] = APP_NAME
     app.config['TRAP_HTTP_EXCEPTIONS'] = True
 
@@ -55,7 +53,5 @@ if __name__ == '__main__':
     port = args.port
 
     app = create_app()
-
-    print(type(app))
 
     app.run(host=HOST, port=port, debug=DEBUG)
