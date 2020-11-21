@@ -1,6 +1,6 @@
 #current app related files
-storage/
-tmp/
+storage_/
+temp/
 testing/
 src/*
 
