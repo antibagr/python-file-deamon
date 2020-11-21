@@ -41,7 +41,10 @@ class BaseRequest(Resource):
         Responses with 405 'method not allowed' at every request
     """
 
-    AllowedMethod = ""
+    # A verbose string that will be included in message
+    # if user will try to access with method
+    # not overwritten in child class
+    AllowedMethod: str = ""
 
     def GetParameter(self, parameter_name: str, required: Optional[bool] = False, **kw: Any) -> Any:
         """Lightweight interface to get parameter from json body

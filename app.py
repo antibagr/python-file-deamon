@@ -21,17 +21,12 @@ class Route:
 def create_app() -> fl.app.Flask:
     """
     Entry point for the API
-    Creates a flask.app.Flask instance
+    Creates and returns a flask.app.Flask instance
     """
-
-    # for directory in [STORAGE_DIR, TEMP_DIR, SRC_DIR]:
-    #     if not os.path.exists(directory):
-    #         os.mkdir(directory)
 
     app = fl.Flask(__name__)
     api = Api(app)
 
-    # max file size is 2 gigabytes
     app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
     app.config['APP_NAME'] = APP_NAME
     app.config['API_VERSION'] = API_VERSION
@@ -39,12 +34,6 @@ def create_app() -> fl.app.Flask:
     app.config['UPLOAD_FOLDER'] = STORAGE_DIR
 
     app.app_context().push()
-
-    # if USE_DATABASE:
-    #     app.config['DATABASE'] = os.path.join(SRC_DIR, 'db.db')
-    #     db = Database()
-    #     db.init_db()
-    #     db.init_app(app)
 
     api.add_resource(DefaultRequest, '/')
     api.add_resource(UploadRequest, Route.upload)

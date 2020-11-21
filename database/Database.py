@@ -5,8 +5,6 @@ from flask import g, current_app
 from flask.cli import with_appcontext
 import click
 
-from config import BASE_DIR
-
 from typing import Optional
 
 
@@ -31,7 +29,7 @@ class Database():
         with current_app.open_resource(os.path.join('database', self.schema_path)) as f:
         # with open(os.path.join(BASE_DIR, 'database', self.schema_path), 'r') as f:
             self.db.executescript(f.read().decode('utf8'))
-        # 
+        #
         # with app.app_context():
         # with app.open_resource('schema.sql', mode='r') as f:
         #     db.cursor().executescript(f.read())

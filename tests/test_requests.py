@@ -154,16 +154,14 @@ def test_uploading_file_twice(client):
     try:
         fileIO, close_IO = get_uncloseable_bytes()
         data = {'file': (fileIO, test_file_name)}
-
         first_response = client.post(Route.upload, data=data)
 
         assert_equals(first_response, 200)
 
         fileIO.seek(0)
-
         response = client.post(Route.upload, data=data)
-        json_response = assert_equals(response, 400)
 
+        json_response = assert_equals(response, 400)
         assert "hash" not in json_response.keys()
 
     finally:
@@ -179,7 +177,7 @@ def test_file_content_is_the_same(client):
         fileIO, close_IO = get_uncloseable_bytes()
         response_upload = client.post(Route.upload, data={'file': (fileIO, test_file_name)})
 
-        assert response_upload.status_code == 200
+        assert_equals(response_upload, 200)
         fileIO.seek(0)
         response = client.get(Route.download, data={"hash": response_upload.get_json()["hash"]})
         assert response.data == fileIO.read()
@@ -222,25 +220,26 @@ def test_delete_existing_hash(client):
         assert response_download.status_code == 200
         assert response_download.data == fileIO.read()
 
-        # Assert that we cannot delete file while there is somebody
-        # That still connected to it
+        # Assert that file cannot be deleted if there is somebody
+        # Who is still connected to it
+        # Connection to the file is stored in response_download.data
 
         response = client.get(Route.delete, data={"hash": uploaded_hash})
         assert_equals(response, 500)
 
         del response_download
 
-        # Now after deleting link to the file
-        # We assert that thus nobody is connected to it now
-        # It can be deleted
+        # Since the connection is no longer stored
+        # We assert that the file can be deleted
+
         response = client.get(Route.delete, data={"hash": uploaded_hash})
         assert_equals(response, 200)
+
+        # File is not available anymore
 
         response_download_after = client.get(Route.download, data={"hash": uploaded_hash})
         assert_equals(response_download_after, 404)
 
     finally:
-
-        # double check in case of AssertionError
         close_IO()
         remove_test_file()
