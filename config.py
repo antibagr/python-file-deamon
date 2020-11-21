@@ -19,3 +19,6 @@ APP_NAME = "Hash Guard"
 HOST = 'localhost'
 DEBUG = True
 MAX_CONTENT_LENGTH = 2 ** 64
+API_ROOT = 'API'
+API_VERSION = 'V1'
+API = f'/{API_ROOT}/{API_VERSION}'

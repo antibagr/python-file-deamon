@@ -1,47 +1,16 @@
 import pytest
-import requests
-import string
-import random
-import io
-import os
-
-from flask import Response, url_for
-from pytest_flask.plugin import JSONResponse
 import json
 
+from typing import List, Callable, Optional, Union
 
-from app import create_app
-from config import HASH_LENGTH, STORAGE_DIR, TEMP_DIR
+import flask as fl
 
-from typing import List, Callable, Optional, Union, Dict, BinaryIO, Tuple
+from app import create_app, Route
+from config import HASH_LENGTH
+from tests.environment import (generate_random_url, get_invalid_hashes,
+                               get_test_bytes_object, get_uncloseable_bytes,
+                               remove_test_file, test_file_name)
 
-URL = '/'
-
-real_urls = ('/', '/upload', '/download', '/delete')
-
-test_bytes = b"some initial text data"
-
-
-def generate_random_url():
-    symbols = string.ascii_lowercase + '/1234567890'
-    fake_url = ''.join(random.choice(symbols) for s in range(len(symbols)+1))
-    if fake_url not in real_urls:
-        return fake_url
-    else:
-        return generate_random_url()
-
-
-def url(*paths, **arguments) -> str:
-    base = "/".join(paths)
-    if arguments:
-        return f"{base}?{'&'.join(set(arguments.items()))}"
-    return base
-
-
-# @pytest.fixture
-# def app():
-#     app = create_app()
-#     return app
 
 @pytest.fixture(scope='module')
 def client():
@@ -53,8 +22,23 @@ def client():
     ctx.pop()
 
 
-def assert_equals(client, url: str, status_code: int):
-    response = client.get(url)
+def assert_equals(response: fl.wrappers.Response, status_code: int) -> dict:
+    """Base function that check response status
+    Equals to passed status_code and response has a message field
+
+    Args:
+        response (): .
+        status_code (int): .
+
+    Return:
+        response dictionary
+
+    Raises:
+        AssertionError: If status_code doesn't match or response has no
+        message field
+
+    """
+
     json_response = response.get_json()
 
     assert response.status_code == status_code
@@ -62,111 +46,76 @@ def assert_equals(client, url: str, status_code: int):
     assert "status_code" in json_response.keys()
     assert json_response["status_code"] == status_code
 
+    return json_response
+
 
 def test_root_get(client):
-
-    assert_equals(client, '/', 200)
-
-
-def post(client, url: str, **kw):
-    return client.post(url,  data=json.dumps(kw), content_type='application/json')
+    response = client.get('/')
+    assert_equals(response, status_code=200)
 
 
-def send_request(client, url: str, not_allowed_methods: Union[Callable, List[Callable]], json_response_code: Optional[int] = None, **data: Optional[Dict]):
+def use_not_allowed_methods(client, url: str, not_allowed_methods: Union[Callable, List[Callable]], json_response_code: Optional[int] = None):
+    """Checks if server allow method passed in not_allowed_methods
+
+    Args:
+        client (type): flask.testing.FlaskClient
+        url (str): target URL
+        not_allowed_methods (Union[Callable, List[Callable]]): list of methods or a single one
+        json_response_code (Optional[int]): Specified response code that should be received
+
+    Raises:
+        AssertionError: If any of passed methods will fail assert_equals
+
+    """
 
     json_response_code = json_response_code or 405
-    data = json.dumps({"some": "data"}) if not len(data) else data
+    data = json.dumps({"some": "data"})
 
     if not isinstance(not_allowed_methods, (list, tuple, set)):
         not_allowed_methods = [not_allowed_methods]
 
     for method in not_allowed_methods:
-
         response = method(url, data=data, content_type='application/json')
-        json_response = response.get_json()
-
-        print(json_response)
-
-        assert response.status_code == json_response_code
-        assert "message" in json_response.keys()
-        assert "status_code" in json_response.keys()
-        assert json_response["status_code"] == json_response_code
+        assert_equals(response, json_response_code)
 
 
 def test_root_post(client):
-    send_request(client, '/', [client.post, client.put, client.delete, client.patch])
+    use_not_allowed_methods(client, '/', [client.post, client.put, client.delete, client.patch])
 
 
 def test_upload_invalid(client):
-    send_request(client, '/upload', [client.get, client.delete, client.patch])
+    use_not_allowed_methods(client, Route.upload, [client.get, client.delete, client.patch])
 
 
 def test_download_invalid(client):
-    send_request(client, '/download', [client.post, client.put, client.delete, client.patch])
+    use_not_allowed_methods(client, Route.download, [client.post, client.put, client.delete, client.patch])
 
 
 def test_delete_invalid(client):
-    send_request(client, '/delete', [client.put, client.patch])
+    use_not_allowed_methods(client, Route.delete, [client.put, client.patch])
 
 
-def test_not_found(client):
+def test_404(client):
     for _ in range(10):
-        assert_equals(client, generate_random_url(), 404)
+        url = generate_random_url()
+        response = client.get(url)
+        assert_equals(response, 404)
 
 
 def test_upload_without_file(client):
-    send_request(client, '/upload', client.post, json_response_code=400)
+    use_not_allowed_methods(client, Route.upload, client.post, json_response_code=400)
 
 
 def test_downloading_non_existing_hash(client):
-
-    hash = "a" * HASH_LENGTH
-    response = client.get(f'/download?hash={hash}')
-    json_response = response.get_json()
-
-    assert response.status_code == 404
-    assert "message" in json_response.keys()
-    assert json_response["status_code"] == 404
-
-
-def get_invalid_hashes() -> List[str]:
-
-    return (str(h) for h in ("/#)$(*^)", ")(*+_~!2:)", "a"
-                             * (HASH_LENGTH-1), "a" * (HASH_LENGTH * 2), " ", "a" * (2**10)))
-
-
-def get_test_bytes_object(content: Optional[bytes] = None, empty_content: Optional[bool] = False) -> BinaryIO:
-    content = test_bytes or content
-    content = b"" if empty_content else content
-    return io.BytesIO(content)
+    fake_hash = "x" * HASH_LENGTH
+    response = client.get(Route.download, data={"hash": fake_hash})
+    assert_equals(response, 404)
 
 
 def test_download_invalid_hashes(client):
     for invalid_hash in get_invalid_hashes():
-        response = client.get('/download', data={"hash": invalid_hash})
-        json_response = response.get_json()
-        print(json_response)
-        assert response.status_code == 403
-        assert "message" in json_response.keys()
-        assert json_response["status_code"] == 403
-
-
-def remove_test_file():
-    # try:
-    file_path = os.path.join(STORAGE_DIR, '4d', '4d0e3bddc298dd5e758dfe682fe964db045af1f827b6a5501ffb9fb0ad9c4b31.txt')
-    file_dir_path = os.path.dirname(file_path)
-    if os.path.exists(file_path):
-        os.remove(file_path)
-
-    # if os.path.exists(file_dir_path):
-    #     if not os.listdir(file_dir_path):
-    #         os.rmdir(file_dir_path)
-
-    file_path_temp = os.path.join(STORAGE_DIR, TEMP_DIR, "fake-text-stream.txt")
-    if os.path.exists(file_path_temp):
-        os.remove(file_path_temp)
-    # except PermissionError:
-    #     print("Are you win user? SBT")
+        response = client.get(Route.download, data={"hash": invalid_hash})
+        assert_equals(response, 403)
 
 
 def test_upload_text_stream(client):
@@ -175,17 +124,10 @@ def test_upload_text_stream(client):
     remove_test_file()
 
     try:
-        file_name = "fake-text-stream.txt"
-        data = {
-            'file': (get_test_bytes_object(), file_name)
-        }
-        response = client.post('/upload', data=data)
-        json_response = response.get_json()
-        print(json_response)
-        assert response.status_code == 200
-        assert "message" in json_response.keys()
+        data = {'file': (get_test_bytes_object(), test_file_name)}
+        response = client.post(Route.upload, data=data)
+        json_response = assert_equals(response, 200)
         assert "hash" in json_response.keys()
-        assert json_response["status_code"] == 200
     finally:
         remove_test_file()
 
@@ -196,35 +138,13 @@ def test_upload_empty_stream(client):
     remove_test_file()
 
     try:
-        file_name = "fake-empty-stream"
-        data = {
-            'file': (get_test_bytes_object(empty_content=True), file_name)
-        }
-        response = client.post('/upload', data=data)
-        json_response = response.get_json()
-        print(json_response)
-        assert response.status_code == 403
-        assert "message" in json_response.keys()
+        file_name = test_file_name.split('.')[0]
+        data = {'file': (get_test_bytes_object(empty_content=True), file_name)}
+        response = client.post(Route.upload, data=data)
+        json_response = assert_equals(response, 403)
         assert "hash" not in json_response.keys()
-        assert json_response["status_code"] == 403
     finally:
         remove_test_file()
-
-
-def get_uncloseable_bytes() -> Tuple[BinaryIO, Callable]:
-    """Short summary.
-
-    Returns:
-        Tuple[BinaryIO, Callable]: .
-
-    Raises:
-        ExceptionName: Why the exception is raised.
-
-    """
-    fileIO = get_test_bytes_object()
-    close = fileIO.close
-    fileIO.close = lambda: None
-    return fileIO, close
 
 
 def test_uploading_file_twice(client):
@@ -232,42 +152,36 @@ def test_uploading_file_twice(client):
     # File won't be uploaded if it's already on the disk
     remove_test_file()
     try:
-        file_name = "fake-text-stream.txt"
         fileIO, close_IO = get_uncloseable_bytes()
-        data = {
-            'file': (fileIO, file_name)
-        }
+        data = {'file': (fileIO, test_file_name)}
 
-        client.post('/upload', data=data)
+        first_response = client.post(Route.upload, data=data)
+
+        assert_equals(first_response, 200)
 
         fileIO.seek(0)
 
-        response = client.post('/upload', data=data)
-        json_response = response.get_json()
+        response = client.post(Route.upload, data=data)
+        json_response = assert_equals(response, 400)
 
-        assert response.status_code == 400
-        assert "message" in json_response.keys()
         assert "hash" not in json_response.keys()
-        assert json_response["status_code"] == 400
+
     finally:
         close_IO()
         remove_test_file()
 
 
-def test_file_remains_the_same(client):
+def test_file_content_is_the_same(client):
     # File won't be uploaded if it's already on the disk
     remove_test_file()
     response = None
     try:
-        file_name = "fake-text-stream.txt"
         fileIO, close_IO = get_uncloseable_bytes()
+        response_upload = client.post(Route.upload, data={'file': (fileIO, test_file_name)})
 
-        post_response = client.post('/upload', content_type='multipart/form-data',
-                                    data={'file': (fileIO, file_name)})
-
-        assert post_response.status_code == 200
+        assert response_upload.status_code == 200
         fileIO.seek(0)
-        response = client.get('/download', data={"hash": post_response.get_json()["hash"]})
+        response = client.get(Route.download, data={"hash": response_upload.get_json()["hash"]})
         assert response.data == fileIO.read()
         assert response.status_code == 200
 
@@ -280,23 +194,15 @@ def test_file_remains_the_same(client):
 
 def test_delete_invalid_hashes(client):
     for invalid_hash in get_invalid_hashes():
-        response = client.get('/delete', data={"hash": invalid_hash})
-        json_response = response.get_json()
-        print(json_response)
-        assert response.status_code == 403
-        assert "message" in json_response.keys()
-        assert json_response["status_code"] == 403
+        response = client.get(Route.delete, data={"hash": invalid_hash})
+        assert_equals(response, 403)
 
 
 def test_delete_non_existing_hash(client):
 
-    hash = "a" * HASH_LENGTH
-    response = client.get('/delete', data={"hash": hash})
-    json_response = response.get_json()
-
-    assert response.status_code == 404
-    assert "message" in json_response.keys()
-    assert json_response["status_code"] == 404
+    hash = "x" * HASH_LENGTH
+    response = client.get(Route.delete, data={"hash": hash})
+    assert_equals(response, 404)
 
 
 def test_delete_existing_hash(client):
@@ -304,17 +210,12 @@ def test_delete_existing_hash(client):
     # File won't be uploaded if it's already on the disk
     remove_test_file()
     try:
-        file_name = "fake-text-stream.txt"
         fileIO, close_IO = get_uncloseable_bytes()
+        response_upload = client.post(Route.upload, data={'file': (fileIO, test_file_name)})
+        json_response = assert_equals(response_upload, 200)
+        uploaded_hash = json_response["hash"]
 
-        post_response = client.post('/upload', content_type='multipart/form-data',
-                                    data={'file': (fileIO, file_name)})
-
-        assert post_response.status_code == 200
-
-        uploaded_hash = post_response.get_json()["hash"]
-
-        response_download = client.get('/download', data={"hash": uploaded_hash})
+        response_download = client.get(Route.download, data={"hash": uploaded_hash})
 
         fileIO.seek(0)
 
@@ -324,26 +225,19 @@ def test_delete_existing_hash(client):
         # Assert that we cannot delete file while there is somebody
         # That still connected to it
 
-        response = client.get('/delete', data={"hash": uploaded_hash})
-        json_response = response.get_json()
-        assert response.status_code == 500
-        assert "message" in json_response.keys()
-        assert json_response["status_code"] == 500
+        response = client.get(Route.delete, data={"hash": uploaded_hash})
+        assert_equals(response, 500)
 
         del response_download
+
         # Now after deleting link to the file
         # We assert that thus nobody is connected to it now
         # It can be deleted
-        response = client.get('/delete', data={"hash": uploaded_hash})
-        json_response = response.get_json()
-        assert response.status_code == 200
-        assert "message" in json_response.keys()
-        assert json_response["status_code"] == 200
+        response = client.get(Route.delete, data={"hash": uploaded_hash})
+        assert_equals(response, 200)
 
-        response_download_after = client.get('/download', data={"hash": uploaded_hash})
-
-        assert response_download_after.status_code == 404
-        assert response_download_after.data
+        response_download_after = client.get(Route.download, data={"hash": uploaded_hash})
+        assert_equals(response_download_after, 404)
 
     finally:
 
