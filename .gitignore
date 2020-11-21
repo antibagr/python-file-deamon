@@ -2,6 +2,7 @@
 storage/
 tmp/
 testing/
+src/*
 
 #static database-related files
 
