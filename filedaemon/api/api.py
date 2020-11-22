@@ -16,14 +16,21 @@ class UploadRequest(BaseRequest):
     AllowedMethod = "POST"
 
     def post(self, **kw) -> StandartResponse:
+        """
+        Requires:
+            A file in form-data
+        Returns:
+            400 - file was not provided
+            400 - file is already on the disk
+            403 - empty file discarded
+            200 - eile succesfully uploaded
 
-        parse = reqparse.RequestParser()
-        parse.add_argument('file', type=FileStorage, location='files')
-        args = parse.parse_args()
-        file = args['file']
+        """
+
+        file = self.GetParameter('file', type=FileStorage, location='files')
 
         if not file:
-            return Responses.Build(message="Please provide file to upload in form-data with a key 'file'", status_code=400)
+            return Responses.Build(message="Please provide file to upload in a form-data with a key 'file'", status_code=400)
 
         try:
             hash_string = StorageMaster.save(file)
@@ -43,6 +50,18 @@ class DownloadRequest(BaseRequest):
     AllowedMethod = "GET"
 
     def get(self, **kw) -> StandartResponse:
+        """
+        Requires:
+            A hash in "hash" field
+        Returns:
+            400 - hash was not provided
+            403 - invalid hash
+            404 - file was not found
+            500 - file was found but can't be sent
+
+            file as as attachment if it's found
+
+        """
 
         hash_string = kw.get('hash') or self.GetParameter('hash', type=str)
 
@@ -79,6 +98,17 @@ class DeleteRequest(BaseRequest):
     AllowedMethod = "GET, POST or DELETE"
 
     def get(self, **kw) -> StandartResponse:
+        """
+        Requires:
+            A hash in "hash" field
+        Returns:
+            400 - hash was not provided
+            403 - invalid hash
+            404 - file was not found
+            200 - file was deleted
+            500 - PermissonError (only happens when running on windows)
+
+        """
 
         hash_string = self.GetParameter('hash', type=str)
         if not hash_string:
