@@ -3,7 +3,7 @@ from app import create_app, setup_logging
 
 import os
 import sys
-# import logging
+import logging
 from argparse import ArgumentParser
 import traceback
 
@@ -16,7 +16,19 @@ except ImportError as e:
         print("This probably means you're a Windows user. Windows doesn't support daemonize")
         sys.exit(1)
 
-# setup_logging()
+
+def filelog_constructor(*args, **kw) -> logging.FileHandler:
+    """
+    Called from logging.yml file to set log file path
+    """
+
+    import os
+
+    if not os.path.exists(LOG_DIR):
+        os.mkdir(LOG_DIR)
+
+    LOG_FILE = os.path.join(LOG_DIR, 'std_out.log')
+    return logging.FileHandler(LOG_FILE)
 
 
 def start_daemon(pid_file: str, log_file: str, port: int):
@@ -39,8 +51,13 @@ def start_daemon(pid_file: str, log_file: str, port: int):
             umask=0o002,
             pidfile=pidfile.TimeoutPIDLockFile(pid_file),
     ) as context:
-        create_app(log_file)
-
+        try:
+            # setup_logging()
+            app = create_app()
+            app.run(host=HOST, port=port, debug=DEBUG)
+        except Exception as e:
+            with open(os.path.join(DAEMON_DIR, 'log.log'), 'w') as f:
+                f.write(str(e))
 
 def daemonize(port) -> None:
     # Do the Unix double-fork magic
@@ -67,7 +84,7 @@ def daemonize(port) -> None:
     print("Detaching from parent environment")
 
     # Detach from parent environment
-    # os.chdir("/")
+    os.chdir('/home/rudie/Desktop/drweb/python-file-deamon/')
     """ The call to os.setsid() creates a new session.
     The process becomes the leader of a new session and a new process group,
     and is disassociated from its controlling terminal.
@@ -92,10 +109,14 @@ def daemonize(port) -> None:
 
     # create_app()
 
+    # setup_logging()
+
     app = create_app()
-
-    app.run(host=HOST, port=port, debug=DEBUG)
-
+    try:
+        app.run(host=HOST, port=port, debug=DEBUG)
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
 
 def stop_daemon() -> None:
     import os
@@ -122,5 +143,5 @@ if __name__ == "__main__":
     if args.stop:
         stop_daemon()
     else:
-        daemonize(args.port)
-        # start_daemon(port=args.port, pid_file=args.pid_file, log_file=args.log_file)
+        # daemonize(args.port)
+        start_daemon(port=args.port, pid_file=args.pid_file, log_file=args.log_file)

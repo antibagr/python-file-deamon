@@ -9,4 +9,4 @@ RUN pip install --upgrade pip \
  && pip install -r requirements.txt \
  && rm -rf ~/.cache
 
-CMD ["python", "-m", "filedaemon"]
+CMD ["python", "-m", "app.py"]

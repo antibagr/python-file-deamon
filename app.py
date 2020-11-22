@@ -1,4 +1,5 @@
 import logging
+import os
 
 import flask as fl
 from flask_restful import Api
@@ -7,7 +8,7 @@ from flask_restful import Api
 from api.api import (UploadRequest, DownloadRequest,
                      DeleteRequest, TeaPotRequest, DefaultRequest)
 from api.errors import not_found, request_entity_too_large, default_error_handler
-from config import APP_NAME, HOST, DEBUG, MAX_CONTENT_LENGTH, STORAGE_DIR, API, API_VERSION, LOG_DIR
+from config import APP_NAME, HOST, DEBUG, MAX_CONTENT_LENGTH, BASE_DIR, STORAGE_DIR, API, API_VERSION, LOG_DIR
 
 
 class Route:
@@ -71,7 +72,7 @@ def setup_logging() -> None:
     import logging.config
     import yaml
 
-    loggingConf = open('logging.yml', 'r')
+    loggingConf = open(os.path.join(BASE_DIR, 'logging.yml'), 'r')
     logging.config.dictConfig(yaml.safe_load(loggingConf))
     loggingConf.close()
 
