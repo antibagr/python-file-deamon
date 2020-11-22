@@ -1,9 +1,9 @@
-from config import DAEMON_DIR, DEBUG
-from app import create_app
+from config import DAEMON_DIR, DEBUG, HOST
+from app import create_app, setup_logging
 
 import os
 import sys
-import logging
+# import logging
 from argparse import ArgumentParser
 import traceback
 
@@ -16,8 +16,10 @@ except ImportError as e:
         print("This probably means you're a Windows user. Windows doesn't support daemonize")
         sys.exit(1)
 
+# setup_logging()
 
-def start_daemon(pid_file: str, log_file: str):
+
+def start_daemon(pid_file: str, log_file: str, port: int):
     """
     Function launches  daemon in its context
     :param pid_file:
@@ -40,7 +42,7 @@ def start_daemon(pid_file: str, log_file: str):
         create_app(log_file)
 
 
-def daemonize() -> None:
+def daemonize(port) -> None:
     # Do the Unix double-fork magic
 
     import os
@@ -65,7 +67,7 @@ def daemonize() -> None:
     print("Detaching from parent environment")
 
     # Detach from parent environment
-    os.chdir("/")
+    # os.chdir("/")
     """ The call to os.setsid() creates a new session.
     The process becomes the leader of a new session and a new process group,
     and is disassociated from its controlling terminal.
@@ -90,9 +92,9 @@ def daemonize() -> None:
 
     # create_app()
 
-    # app = create_app()
+    app = create_app()
 
-    # app.run(host=HOST, port=port, debug=DEBUG)
+    app.run(host=HOST, port=port, debug=DEBUG)
 
 
 def stop_daemon() -> None:
@@ -120,4 +122,5 @@ if __name__ == "__main__":
     if args.stop:
         stop_daemon()
     else:
-        start_daemon(port=args.port, pid_file=args.pid_file, log_file=args.log_file)
+        daemonize(args.port)
+        # start_daemon(port=args.port, pid_file=args.pid_file, log_file=args.log_file)

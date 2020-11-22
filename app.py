@@ -47,6 +47,8 @@ def create_app() -> fl.app.Flask:
     app.errorhandler(413)(request_entity_too_large)
     app.register_error_handler(Exception, default_error_handler)
 
+    print('everything ok')
+
     return app
 
 
@@ -54,6 +56,8 @@ def filelog_constructor(*args, **kw) -> logging.FileHandler:
     """
     Called from logging.yml file to set log file path
     """
+
+    import os
 
     if not os.path.exists(LOG_DIR):
         os.mkdir(LOG_DIR)

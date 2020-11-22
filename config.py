@@ -8,7 +8,7 @@ STORAGE_DIR = os.path.join(BASE_DIR, 'files')
 SRC_DIR = os.path.join(BASE_DIR, 'src')
 TEMP_DIR = os.path.join(STORAGE_DIR, 'temporary')
 LOG_DIR = os.path.join(BASE_DIR, 'logs')
-DAEMON_DIR = os.path.join(BASE_DIR, 'deamon')
+DAEMON_DIR = os.path.join(BASE_DIR, 'daemon')
 
 # Hash and files related
 
