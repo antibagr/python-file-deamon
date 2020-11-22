@@ -93,3 +93,5 @@ Because I didn't have time to set container so it can accept host, port and debu
 API always returns a JSON response which contains a **status_code** filed and **message** field. Please notice that not all HTTP method is allowed i.e. /api/v1/download only accept GET method. If a request with invalid method was received, a 405 response will be returned.
 
 If required filed is not provided server wiil anwser with 400 status code.
+
+To see full status code list please refer to docstings of api clases in `filedaemon\api\api.py`
