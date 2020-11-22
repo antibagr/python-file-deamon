@@ -1,3 +1,5 @@
+import logging
+
 import flask as fl
 from flask_restful import Api
 
@@ -5,7 +7,7 @@ from flask_restful import Api
 from api.api import (UploadRequest, DownloadRequest,
                      DeleteRequest, TeaPotRequest, DefaultRequest)
 from api.errors import not_found, request_entity_too_large, default_error_handler
-from config import APP_NAME, HOST, DEBUG, MAX_CONTENT_LENGTH, STORAGE_DIR, API, API_VERSION
+from config import APP_NAME, HOST, DEBUG, MAX_CONTENT_LENGTH, STORAGE_DIR, API, API_VERSION, LOG_DIR
 
 
 class Route:
@@ -48,14 +50,44 @@ def create_app() -> fl.app.Flask:
     return app
 
 
+def filelog_constructor(*args, **kw) -> logging.FileHandler:
+    """
+    Called from logging.yml file to set log file path
+    """
+
+    if not os.path.exists(LOG_DIR):
+        os.mkdir(LOG_DIR)
+
+    LOG_FILE = os.path.join(LOG_DIR, 'std_out.log')
+    return logging.FileHandler(LOG_FILE)
+
+
+def setup_logging() -> None:
+
+    import logging.config
+    import yaml
+
+    loggingConf = open('logging.yml', 'r')
+    logging.config.dictConfig(yaml.safe_load(loggingConf))
+    loggingConf.close()
+
+    logfile = logging.getLogger('file')
+    logconsole = logging.getLogger('console')
+    logfile.debug("Debug FILE")
+    logconsole.debug("Debug CONSOLE")
+
+
 if __name__ == '__main__':
 
+    import os
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
     parser.add_argument('-p', '--port', default=5000, type=int, help='port to listen on')
     args = parser.parse_args()
-    port = args.port
+    port: int = args.port
+
+    setup_logging()
 
     app = create_app()
 

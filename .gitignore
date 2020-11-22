@@ -4,6 +4,7 @@ temp/
 testing/
 src/*
 files/
+logs/*
 
 #static database-related files
 
