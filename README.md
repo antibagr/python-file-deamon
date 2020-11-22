@@ -94,4 +94,4 @@ API always returns a JSON response which contains a **status_code** filed and **
 
 If required filed is not provided server wiil anwser with 400 status code.
 
-To see full status code list please refer to docstings of api clases in `filedaemon\api\api.py`
+To see full status code list please refer to docstings of api clases in [api.py](filedaemon/api/api.py)
