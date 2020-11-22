@@ -48,8 +48,6 @@ def create_app() -> fl.app.Flask:
     app.errorhandler(413)(request_entity_too_large)
     app.register_error_handler(Exception, default_error_handler)
 
-    print('everything ok')
-
     return app
 
 

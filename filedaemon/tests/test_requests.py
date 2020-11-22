@@ -220,19 +220,9 @@ def test_delete_existing_hash(client):
         assert response_download.status_code == 200
         assert response_download.data == fileIO.read()
 
-        # Assert that file cannot be deleted if there is somebody
-        # Who is still connected to it
-        # Connection to the file is stored in response_download.data
-
-        # response = client.get(Route.delete, data={"hash": uploaded_hash})
-        
-        # print(response.get_json())
-
-        # assert_equals(response, 500)
-
         del response_download
 
-        # Since the connection is no longer stored
+        # Since the link to the file is no longer stored
         # We assert that the file can be deleted
 
         response = client.get(Route.delete, data={"hash": uploaded_hash})
