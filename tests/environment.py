@@ -12,9 +12,11 @@ real_urls = ('/', '/upload', '/download', '/delete')
 test_bytes = b"some initial text data"
 test_file_name = "fake-text-stream.txt"
 
+
 def generate_random_url() -> str:
-    """Generate string sequense that
-        Looks like a url
+    """
+    Generate string sequense that
+    Looks like a url
     """
 
     def get_random_part() -> str:
@@ -29,7 +31,8 @@ def generate_random_url() -> str:
 
 
 def get_invalid_hashes() -> List[str]:
-    """Generate a list of invalid hashes
+    """
+    Generate a list of invalid hashes
     """
 
     return (str(h) for h in ("/#)$(*^)", ")(*+_~!2:)", "x"
@@ -37,7 +40,7 @@ def get_invalid_hashes() -> List[str]:
 
 
 def get_test_bytes_object(content: Optional[bytes] = None, empty_content: Optional[bool] = False) -> BinaryIO:
-    """Get binary object with cached content
+    """Get binary object with test content
     Args:
         content (Optional[bytes]): Optional custom content
         empty_content (Optional[bool]): Should it return an empty binary?
@@ -50,10 +53,11 @@ def get_test_bytes_object(content: Optional[bytes] = None, empty_content: Option
 
 
 def get_uncloseable_bytes() -> Tuple[BinaryIO, Callable]:
-    """Get uncloseable bytes object
-        In order to control when it should be closed
+    """
+    Get uncloseable bytes object
+    In order to control when it should be closed
     Returns:
-        Tuple[BinaryIO, Callable]: A binary object and a function the closes it
+        Tuple[BinaryIO, Callable]: A binary object and a function that closes it
     """
     fileIO = get_test_bytes_object()
     close = fileIO.close

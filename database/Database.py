@@ -27,7 +27,7 @@ class Database():
         self.db = self.db or self.connect()
 
         with current_app.open_resource(os.path.join('database', self.schema_path)) as f:
-        # with open(os.path.join(BASE_DIR, 'database', self.schema_path), 'r') as f:
+            # with open(os.path.join(BASE_DIR, 'database', self.schema_path), 'r') as f:
             self.db.executescript(f.read().decode('utf8'))
         #
         # with app.app_context():
