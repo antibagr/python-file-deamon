@@ -20,7 +20,7 @@ READING_FILE_BUF_SIZE = 65536  # 64kb
 # App related
 
 APP_NAME = "Hash Guard"
-HOST = 'localhost'
+HOST = '0.0.0.0'
 DEBUG = True
 MAX_CONTENT_LENGTH = 2 ** 64
 MAX_CONTENT_LENGTH_VERBOSE = "2 GB"

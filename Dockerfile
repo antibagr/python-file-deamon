@@ -9,4 +9,6 @@ RUN pip install --upgrade pip \
  && pip install -r requirements.txt \
  && rm -rf ~/.cache
 
+EXPOSE 5000
+
 CMD ["python", "filedaemon"]
