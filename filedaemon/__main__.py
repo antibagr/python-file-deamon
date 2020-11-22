@@ -13,5 +13,4 @@ if __name__ == '__main__':
 
     application = create_app()
 
-    application.run(host=HOST, port=port, debug=DEBUG, use_reloader=False)
-
+    application.run(host=HOST, port=port, debug=False, use_reloader=False)
