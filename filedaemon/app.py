@@ -93,5 +93,7 @@ if __name__ == '__main__':
     setup_logging()
 
     app = create_app()
-
-    app.run(host=HOST, port=port, debug=DEBUG)
+    try:
+        app.run(host=HOST, port=port, debug=DEBUG)
+    finally:
+        logging.warning('Exiting')
