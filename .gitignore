@@ -1,11 +1,3 @@
-#current app related files
-storage_/
-temp/
-testing/
-src/*
-files/
-logs/*
-
 #static database-related files
 
 *.pyo

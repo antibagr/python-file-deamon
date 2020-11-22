@@ -4,11 +4,9 @@ import hashlib
 # Files related
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STORAGE_DIR = os.path.join(BASE_DIR, 'files')
-SRC_DIR = os.path.join(BASE_DIR, 'src')
+STORAGE_DIR = os.path.join(BASE_DIR, 'files') # Place where the users' files stored
 TEMP_DIR = os.path.join(STORAGE_DIR, 'temporary')
 LOG_DIR = os.path.join(BASE_DIR, 'logs')
-DAEMON_DIR = os.path.join(BASE_DIR, 'daemon')
 
 # Hash and files related
 
