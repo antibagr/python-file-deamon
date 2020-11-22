@@ -4,6 +4,8 @@ services:
 
   file_daemon:
     build: ./
+    ports:
+      - "5000:5000"
     image: file-daemon
     volumes:
       - "./:/code"
