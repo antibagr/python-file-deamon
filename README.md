@@ -30,7 +30,7 @@ Edit daemon.conf in a root directory changing **YOUR_PATH_TO_PYTHON** with path 
 
 Run deamonizing script
 
-    . script.sh
+    . daemonize.sh
 
 Then you can check that the daemon is running with
 
