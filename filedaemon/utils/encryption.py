@@ -1,15 +1,15 @@
 import re
 
-from typing import Optional
+from typing import Optional, Union
 
 from config import HASHING_METHOD, HASH_LENGTH
 
 
-def encrypt_string(unhashed_string: str, raw: Optional[bool] = False) -> str:
+def encrypt_string(unhashed_string: str, raw: Optional[bool] = False) -> Union[str, bytes]:
     if not isinstance(unhashed_string, str):
         raise ValueError("Please provide string argument")
     hashed = HASHING_METHOD(unhashed_string.encode('utf-8'))
-    return hashed if raw else hashed.hexdigest()
+    return hashed.digest() if raw else hashed.hexdigest()
 
 
 def verify_hash(hash_string: str) -> bool:

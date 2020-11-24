@@ -5,9 +5,9 @@ from flask_restful import reqparse
 from werkzeug.datastructures import FileStorage
 from werkzeug import exceptions
 
-from .abs import BaseRequest, Responses, StandartResponse
-from storage import StorageMaster, EmptyFileException
-from utils import verify_hash
+from .abs import BaseRequest, Responses, StandartResponse, ResponseBuilder
+from storage.manager import StorageMaster, EmptyFileException
+from utils.encryption import verify_hash
 from config import STORAGE_DIR
 
 
@@ -30,16 +30,16 @@ class UploadRequest(BaseRequest):
         file = self.GetParameter('file', type=FileStorage, location='files')
 
         if not file:
-            return Responses.Build(message="Please provide file to upload in a form-data with a key 'file'", status_code=400)
+            return ResponseBuilder()(message="Please provide file to upload in a form-data with a key 'file'", status_code=400)
 
         try:
             hash_string = StorageMaster.save(file)
         except FileExistsError:
-            return Responses.Build(message="File you are trying to upload is already on the disk", status_code=400)
+            return ResponseBuilder()(message="File you are trying to upload is already on the disk", status_code=400)
         except EmptyFileException:
-            return Responses.Build(message="Empty file discarded", status_code=403)
+            return ResponseBuilder()(message="Empty file discarded", status_code=403)
 
-        return Responses.Build(message="File succesfully uploaded", hash=hash_string, status_code=200)
+        return ResponseBuilder()(message="File succesfully uploaded", hash=hash_string, status_code=200)
 
     def put(self, **kw) -> StandartResponse:
         return self.post()
@@ -66,7 +66,7 @@ class DownloadRequest(BaseRequest):
         hash_string = kw.get('hash') or self.GetParameter('hash', type=str)
 
         if not hash_string:
-            return Responses.Build(message="Wrong usage. Please provide file hash to download it", status_code=400)
+            return ResponseBuilder()(message="Wrong usage. Please provide file hash to download it", status_code=400)
 
         if not verify_hash(hash_string):
             return Responses.Response403
@@ -82,7 +82,7 @@ class DownloadRequest(BaseRequest):
                 # this should not happen ever
                 return Responses.Response500
 
-        return Responses.Build(message="Sorry, hash not found on the server", status_code=404)
+        return ResponseBuilder()(message="Sorry, hash not found on the server", status_code=404)
 
 
 class TeaPotRequest(BaseRequest):
@@ -112,7 +112,7 @@ class DeleteRequest(BaseRequest):
 
         hash_string = self.GetParameter('hash', type=str)
         if not hash_string:
-            return Responses.Build(message="Wrong usage. Please provide file hash to delete it", status_code=400)
+            return ResponseBuilder()(message="Wrong usage. Please provide file hash to delete it", status_code=400)
 
         if not verify_hash(hash_string):
             return Responses.Response403
@@ -123,10 +123,10 @@ class DeleteRequest(BaseRequest):
             try:
                 StorageMaster.delete(found_file)
             except PermissionError:
-                return Responses.Build(message="Sorry, cannot delete the file now. Somebody is still connected to it", status_code=500)
-            return Responses.Build(message="File was deleted", status_code=200)
+                return ResponseBuilder()(message="Sorry, cannot delete the file now. Somebody is still connected to it", status_code=500)
+            return ResponseBuilder()(message="File was deleted", status_code=200)
 
-        return Responses.Build(message="Sorry, hash not found on the server", status_code=404)
+        return ResponseBuilder()(message="Sorry, hash not found on the server", status_code=404)
 
     def post(self, **kw) -> StandartResponse:
         return self.get()

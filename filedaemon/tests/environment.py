@@ -11,6 +11,11 @@ from config import HASH_LENGTH, STORAGE_DIR, TEMP_DIR
 real_urls = ('/', '/upload', '/download', '/delete')
 test_bytes = b"some initial text data"
 test_file_name = "fake-text-stream.txt"
+testing_hash = '4d0e3bddc298dd5e758dfe682fe964db045af1f827b6a5501ffb9fb0ad9c4b31'
+
+
+def generate_pseudo_word() -> str:
+    return "".join([random.choice(string.ascii_lowercase) for _ in range(10)])
 
 
 def generate_random_url() -> str:
@@ -19,11 +24,8 @@ def generate_random_url() -> str:
     Looks like a url
     """
 
-    def get_random_part() -> str:
-        return "".join([random.choice(string.ascii_lowercase) for _ in range(10)])
-
     fake_url = '/'
-    fake_url += '/'.join((get_random_part() for _ in range(3)))
+    fake_url += '/'.join((generate_pseudo_word() for _ in range(3)))
     if fake_url not in real_urls:
         return fake_url
     else:
@@ -67,7 +69,7 @@ def get_uncloseable_bytes() -> Tuple[BinaryIO, Callable]:
 
 def remove_test_file():
     # try:
-    file_path = os.path.join(STORAGE_DIR, '4d', '4d0e3bddc298dd5e758dfe682fe964db045af1f827b6a5501ffb9fb0ad9c4b31.txt')
+    file_path = os.path.join(STORAGE_DIR, '4d', f'{testing_hash}.txt')
     file_dir_path = os.path.dirname(file_path)
     if os.path.exists(file_path):
         os.remove(file_path)
