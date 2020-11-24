@@ -5,7 +5,7 @@ from flask_restful import reqparse
 from werkzeug.datastructures import FileStorage
 from werkzeug import exceptions
 
-from .model import BaseRequest, Responses, StandartResponse
+from .abs import BaseRequest, Responses, StandartResponse
 from storage import StorageMaster, EmptyFileException
 from utils import verify_hash
 from config import STORAGE_DIR

@@ -1,15 +1,38 @@
 from flask_restful import Resource, reqparse
 
-from typing import Tuple, Dict, Optional, Any
+from typing import Tuple, Dict, Optional, Any, TypeVar
+from typing_extensions import final
+from attr import dataclass
 
 from config import APP_NAME, MAX_CONTENT_LENGTH_VERBOSE
 
 
-StandartResponse = Tuple[Dict, int]
+StandartResponse = TypeVar(Tuple[Dict, int])
 
 
-class Responses:
-    """Storage to typed responses of the API
+@final
+@dataclass(frozen=True, slots=True)
+class ResponseBuilder(object):
+    """
+    Callable object to construct a response.
+    """
+
+    def __call__(self, status_code: int = 200, **kw: Any) -> StandartResponse:
+        """Constructor for a server responses
+
+        Args:
+            status_code (int): . Defaults to 200
+            **kw (type): Any parameters that could be jsonified
+
+        Returns:
+            StandartResponse: Tuple[Dict, int]
+        """
+        return {**kw, "status_code": status_code}, status_code
+
+
+class Responses(object):
+    """
+    Storage to typed responses of the API.
     """
 
     NotAllowed = "This method is not allowed. Please use {method} instead"
@@ -37,14 +60,16 @@ class Responses:
 
 
 class BaseRequest(Resource):
-    """Base Resource class
-        Responses with 405 'method not allowed' at every request
+    """
+    Base Resource class
+    Responses with 405 'method not allowed' at every request
     """
 
     # A verbose string that will be included in message
     # if user will try to access with method
     # not overwritten in child class
-    AllowedMethod: str = ""
+    AllowedMethod: str
+
 
     def GetParameter(self, parameter_name: str, required: Optional[bool] = False, **kw: Any) -> Any:
         """Lightweight interface to get parameter from json body

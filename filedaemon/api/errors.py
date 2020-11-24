@@ -2,7 +2,7 @@ import traceback
 
 from werkzeug.exceptions import HTTPException
 
-from .model import Responses
+from .abs import Responses
 
 
 def not_found(error):
