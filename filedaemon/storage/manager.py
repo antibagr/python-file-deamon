@@ -50,20 +50,28 @@ class StorageMaster(object):
     TEMP: str = TEMP_DIR
     check_directory_decorator: Callable = partial(check_directory_exists, dirs=[STORAGE, TEMP])
 
-    @classmethod
-    @check_directory_decorator
-    def save(cls, f: FileStorage, fastway=True) -> str:
+    @staticmethod
+    def check_file_is_not_empty(f: FileStorage) -> None:
         """
-        Saving file and computing it's hash at the same stream
+        Raises EmptyFileException if file is empty
         """
 
         if f.stream.read(1) == b'':
             raise EmptyFileException()
-
         f.stream.seek(0)
 
-        f.filename = secure_filename(f.filename)
+    @classmethod
+    def _save_file_on_disk(cls, f: FileStorage) -> str:
+        """
+        Save file to temp directory and compute its hash at the same stream
 
+        Args:
+            f: FileStorage - file to be stored
+        Returns:
+            str - computed hash
+        """
+
+        f.filename = secure_filename(f.filename)
         hash_instance = HASHING_METHOD()
         hash_instance.update(f.filename.encode('utf-8'))
         temp_path = os.path.join(cls.TEMP, f.filename)
@@ -76,8 +84,24 @@ class StorageMaster(object):
                 hash_instance.update(data)
                 out_file.write(data)
 
-        hash_string = hash_instance.hexdigest()
+        return hash_instance.hexdigest()
 
+    @classmethod
+    def _move_file_from_temp(cls, temp_path: str, hash_string: str) -> None:
+        """Rename file given in temp_path and
+        move it to its permanent storage defined in hash_string
+
+        Args:
+            temp_path (type): full path to file saved in temp directory
+            hash_string (type): computed hash of the file
+
+        Returns:
+            None
+
+        Raises:
+            FileExistsError: If file with such name is already exists
+
+        """
         directory = os.path.join(cls.STORAGE, hash_string[:2])
 
         if not os.path.exists(directory):
@@ -86,21 +110,42 @@ class StorageMaster(object):
         file_extension = os.path.splitext(temp_path)[1]
         hashed_path = os.path.join(directory, hash_string + file_extension)
 
-        if not os.path.exists(hashed_path):
-            try:
+        try:
+            if not os.path.exists(hashed_path):
                 shutil.move(temp_path, hashed_path)
-            finally:
-                if os.path.exists(temp_path):
-                    os.remove(temp_path)
+            else:
+                raise FileExistsError()
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
 
-        else:
-            raise FileExistsError()
+
+    @classmethod
+    @check_directory_decorator
+    def save(cls, f: FileStorage) -> str:
+        """
+        Save user's file and returns its hash
+
+        Args:
+            f (FileStorage): User's file
+
+        Returns:
+            str: computed hash
+
+        Raises:
+            EmptyFileException, FileExistsError, PermissionError
+        """
+
+        cls.check_file_is_not_empty(f)
+        hash_string = cls._save_file_on_disk(f)
+        temp_path = os.path.join(cls.TEMP, f.filename)
+        cls._move_file_from_temp(temp_path, hash_string)
 
         return hash_string
 
     @classmethod
     @check_directory_decorator
-    def get(cls, hash_string: str) -> Tuple[str, str]:
+    def get(cls, hash_string: str) -> str:
         """
         Get subdirectory and full filename if one is found
         """
@@ -108,15 +153,15 @@ class StorageMaster(object):
         seek_directory = os.path.join(cls.STORAGE, hash_string[:2])
 
         if os.path.exists(seek_directory):
-            for suspect in os.listdir(seek_directory):
-                filename, extension = os.path.splitext(suspect)
+            for full_filename in os.listdir(seek_directory):
+                filename, extension = os.path.splitext(full_filename)
                 if filename == hash_string:
-                    return hash_string[:2], suspect
-        return None, None
+                    return full_filename
+        return None
 
     @classmethod
     @check_directory_decorator
-    def delete(cls, file_name: str) -> str:
+    def delete(cls, file_name: str) -> None:
         """
         Deletes file if one is found.
         If it's the last file in the directory it wiil be cleared too

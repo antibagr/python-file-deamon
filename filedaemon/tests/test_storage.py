@@ -22,6 +22,6 @@ def manager(storage_mock):
     return mng
 
 
-def test_storage_manager_save(manager):
-
-    assert manager.get('123')[0]
+# def test_storage_manager_save(manager):
+#
+#     assert manager.get('123')[0]

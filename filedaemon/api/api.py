@@ -71,11 +71,11 @@ class DownloadRequest(BaseRequest):
         if not verify_hash(hash_string):
             return Responses.Response403
 
-        found_dir, found_file = StorageMaster.get(hash_string)
+        found_file = StorageMaster.get(hash_string)
         if found_file:
 
             try:
-                return send_from_directory(os.path.join(STORAGE_DIR, found_dir), found_file, as_attachment=True)
+                return send_from_directory(os.path.join(STORAGE_DIR, found_file[:2]), found_file, as_attachment=True)
             except exceptions.NotFound:
                 # handle not found exception as internal
                 # because if everything works just fine
@@ -117,7 +117,7 @@ class DeleteRequest(BaseRequest):
         if not verify_hash(hash_string):
             return Responses.Response403
 
-        found_dir, found_file = StorageMaster.get(hash_string)
+        found_file = StorageMaster.get(hash_string)
 
         if found_file:
             try:
